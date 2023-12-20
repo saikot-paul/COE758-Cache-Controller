@@ -69,6 +69,7 @@ Some key things to not before I start explaining the code, VHDL is a language th
       - Probably the coolest thing imo
       - This is a combinational circuit it evaluates anytime an address is placed and then determines whether a hit or miss occurs by looking at the various registers
       - This determines the hit or miss signal that is used to go into the correct state
+      - You are always evaluating whether there is a hit or miss, and therefore its ready for whenever a new operation is needed to be performed 
 2) Update State
       - Updates the state
       - Clocked process
