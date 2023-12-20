@@ -20,17 +20,17 @@ If you are reading this, you are either a recruiter (please hire me) or a studen
     - You may be wondering why there's not read miss, or write miss that's because you have to do block replacement when its a miss for either then perform the action required by the CPU
     - So again depending some conditions you go into that state
 3) State 2 - Read Hit
-  - If you get to this state, that means that the data requested to read is in the cache, so you just retrieve whatever was in the cache (BRAM) and then send it out onto the appropriate signal
-  - Return to idle state
+      - If you get to this state, that means that the data requested to read is in the cache, so you just retrieve whatever was in the cache (BRAM) and then send it out onto the appropriate signal
+      - Return to idle state
 4) State 3 - Write Hit
-  - If you get to this state, that means that the tag exists in the cache and now you write to the cache and set the d-bit to 1
-  - - Return to idle state
+      - If you get to this state, that means that the tag exists in the cache and now you write to the cache and set the d-bit to 1
+      - Return to idle state
 5) State 4 - Write Main to Cache
-  - The tag was not in cache and the d-bit = 0, so you can simply perform block replacement
-  - Go back to State 2 (Dispatcher) and perform actions specified by CPU 
+      - The tag was not in cache and the d-bit = 0, so you can simply perform block replacement
+      - Go back to State 2 (Dispatcher) and perform actions specified by CPU 
 6) State 5 - Write Cache to Main
-  - The d-bit = 1, meaning that cache has been written into and therefore you need to propagate those changes to Main Memory
-  - Go to State 4, once you're done
+      - The d-bit = 1, meaning that cache has been written into and therefore you need to propagate those changes to Main Memory
+      - Go to State 4, once you're done
 
 ## Implementation Details 
 
@@ -66,36 +66,36 @@ If you are reading this, you are either a recruiter (please hire me) or a studen
 Some key things to not before I start explaining the code, VHDL is a language that is literally describing the hardware. When you write code in VHDL it gets broken down to logic gates and then it loads the logic you wrote onto the FPGA. So knowing this, it means that all the processes are ran concurrently and they are "triggered" when something changes in the sensitivity list. 
 
 1) Hit or Miss function
-  - Probably the coolest thing imo
-  - This is a combinational circuit it evaluates anytime an address is placed and then determines whether a hit or miss occurs by looking at the various registers
-  - This determines the hit or miss signal that is used to go into the correct state
+      - Probably the coolest thing imo
+      - This is a combinational circuit it evaluates anytime an address is placed and then determines whether a hit or miss occurs by looking at the various registers
+      - This determines the hit or miss signal that is used to go into the correct state
 2) Update State
-  - Updates the state
-  - Clocked process
+      - Updates the state
+      - Clocked process
 3) Finite State Machine
-  - This determines the next state given the current state
+      - This determines the next state given the current state
 4) Generate Outputs
-  - Based on the state determine the correct outputs
-  - State 0
-    - Idle State so make cpu ready 0 to signify the cache is not available
-  - State 1
-    - Dispatcher state reset the flags for transitioning and read/write signals
-  - State 2
-    - Read hit state
-    - Set the signals to read from cache
-    - Place data read from cache onto the CPU data in bus
-  - State 3
-    - Write hit state
-    - Set the signals to write to cache
-    - Place CPU data out onto the cache data in signal
-  - State 4
-    - Write main to cache since d-bit = 0
-    - Initialize the signals for offset, read from main memory, write to cache
-    - Oscillatte mem strobe
-    - Do until block is completely replaced
-  - State 5
-    - Write cache to main since d-bit = 1
-    - Initialize signals for offset, read from cache, write to main
-    - Oscillate mem strobe
-    - Do until block is written to main
+      - Based on the state determine the correct outputs
+      - State 0
+        - Idle State so make cpu ready 0 to signify the cache is not available
+      - State 1
+        - Dispatcher state reset the flags for transitioning and read/write signals
+      - State 2
+        - Read hit state
+        - Set the signals to read from cache
+        - Place data read from cache onto the CPU data in bus
+      - State 3
+        - Write hit state
+        - Set the signals to write to cache
+        - Place CPU data out onto the cache data in signal
+      - State 4
+        - Write main to cache since d-bit = 0
+        - Initialize the signals for offset, read from main memory, write to cache
+        - Oscillatte mem strobe
+        - Do until block is completely replaced
+      - State 5
+        - Write cache to main since d-bit = 1
+        - Initialize signals for offset, read from cache, write to main
+        - Oscillate mem strobe
+        - Do until block is written to main
 
