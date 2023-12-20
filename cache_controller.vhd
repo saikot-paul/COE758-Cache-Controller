@@ -1,8 +1,7 @@
 ----------------------------------------------------------------------------------
--- Company: 
--- Engineer: 		 Saikot Paul, Josh Naraine
+-- Engineer: Saikot Paul 
 -- 
--- Create Date:    21:04:08 10/24/2023 
+-- Create Date:    20:02:31 10/28/2023 
 -- Design Name: 
 -- Module Name:    cache_controller - Behavioral 
 -- Project Name: 
@@ -21,308 +20,338 @@ library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL; 
 
--- Uncomment the following library declaration if using
--- arithmetic functions with Signed or Unsigned values
---use IEEE.NUMERIC_STD.ALL;
-
--- Uncomment the following library declaration if instantiating
--- any Xilinx primitives in this code.
---library UNISIM;
---use UNISIM.VComponents.all;
-
 entity cache_controller is
-	PORT ( 
-		clk : in std_logic; 
-		address_in : out std_logic_vector(15 downto 0); 
-		state : out std_logic_vector(2 downto 0); 
-		cs : out std_logic; 
-		rd_wr_in : out std_logic; 
-		hit : out std_logic; 
-		
-		cache_add : out std_logic_vector(7 downto 0) ; 
-		cache_din : out std_logic_vector(7 downto 0) ; 
-		cache_dout : out std_logic_vector(7 downto 0) ; 
-		c_wea : out std_logic_vector(0 downto 0); 
-		
-		m_wea : out std_logic_vector(0 downto 0); 
-		main_add : out std_logic_vector(15 downto 0);
-		main_din : out std_logic_vector(7 downto 0); 
-		main_dout : out std_logic_vector(7 downto 0)
-		
-	); 
+    Port ( clk : in  STD_LOGIC);
 end cache_controller;
 
 architecture Behavioral of cache_controller is
+
 	-- ICON -- 
 	component icon
-	  PORT (
-		 CONTROL0 : INOUT STD_LOGIC_VECTOR(35 DOWNTO 0));
+	PORT (
+		CONTROL0 : INOUT STD_LOGIC_VECTOR(35 DOWNTO 0);
+		CONTROL1 : INOUT STD_LOGIC_VECTOR(35 DOWNTO 0));
 	end component;
 	
-	signal control : STD_LOGIC_VECTOR(35 downto 0); 
-	-- 
+	signal control0 : STD_LOGIC_VECTOR(35 downto 0); 
+	signal control1 : STD_LOGIC_VECTOR(35 downto 0); 
 	
 	-- ILA -- 
-	component ila
-	PORT (
-		 CONTROL : INOUT STD_LOGIC_VECTOR(35 DOWNTO 0);
-		 CLK : IN STD_LOGIC;
-		 DATA : IN STD_LOGIC_VECTOR(99 DOWNTO 0);
-		 TRIG0 : IN STD_LOGIC_VECTOR(0 TO 0));
-	end component;
+	component ila 
+	PORT(
+		CONTROL : INOUT STD_LOGIC_VECTOR(35 downto 0);
+		CLK : IN STD_LOGIC; 
+		DATA : IN STD_LOGIC_VECTOR(99 downto 0); 
+		TRIG0 : IN STD_LOGIC_VECTOR(0 downto 0)
+	);
+	end component; 
 	
 	signal ila_data : STD_LOGIC_VECTOR(99 downto 0); 
 	signal trig : STD_LOGIC_VECTOR(0 downto 0); 
-	-- 
 	
-	-- CPU -- 
-	component CPU_gen is
-	Port ( 
-		clk 		: in  STD_LOGIC;
-      rst 		: in  STD_LOGIC;
-      trig 		: in  STD_LOGIC;
-		-- Interface to the Cache Controller.
-      Address 	: out  STD_LOGIC_VECTOR (15 downto 0);
-      wr_rd 	: out  STD_LOGIC;
-      cs 		: out  STD_LOGIC;
-      DOut 		: out  STD_LOGIC_VECTOR (7 downto 0)
-	);
+	-- VIO -- 
+	component vio
+	PORT (
+    CONTROL : INOUT STD_LOGIC_VECTOR(35 DOWNTO 0);
+    ASYNC_OUT : OUT STD_LOGIC_VECTOR(25 DOWNTO 0)
+	 );
 	end component;
 	
-	signal cpu_add : STD_LOGIC_VECTOR(15 downto 0); 
-	signal cpu_cs : STD_LOGIC;
-	signal cpu_rdy : STD_LOGIC;
-	signal cpu_rd_wr : STD_LOGIC;
-	signal cpu_din, cpu_dout_sig : STD_LOGIC_VECTOR(7 downto 0); 
-	signal cpu_tag : STD_LOGIC_VECTOR(7 downto 0); 
-	signal index : integer; 
-	signal offset : STD_LOGIC_VECTOR(4 downto 0); 
-	-- 
+	signal vio_sig : STD_LOGIC_VECTOR(25 downto 0); 
 	
 	-- CACHE MEMORY -- 
-	component cache 
-	port ( 
-	 clka : IN STD_LOGIC;
-    wea : IN STD_LOGIC_VECTOR(0 DOWNTO 0);
-    addra : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
-    dina : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
-    douta : OUT STD_LOGIC_VECTOR(7 DOWNTO 0)
-	); 
-	end component; 
-	
-	signal cache_wea : std_logic_vector(0 downto 0); 
-	signal cache_add_sig : std_logic_vector(7 downto 0); 
-	signal cache_din_sig : std_logic_vector(7 downto 0); 
-	signal cache_dout_sig : std_logic_vector(7 downto 0); 
-	--- 
-	
-	-- SDRAM MEMORY -- 
-	component sdram_controller is
-	port (
-			clk : in std_logic; 
-			address : in std_logic_vector(15 downto 0); 
-			wea : in std_logic_vector(0 downto 0); 
-			data_in :  in std_logic_vector(7 downto 0); 
-			data_out : out std_logic_vector(7 downto 0)
-		); 
+	component cache_mem
+	  PORT (
+		 clka : IN STD_LOGIC;
+		 wea : IN STD_LOGIC_VECTOR(0 DOWNTO 0);
+		 addra : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
+		 dina : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
+		 douta : OUT STD_LOGIC_VECTOR(7 DOWNTO 0)
+	  );
 	end component;
 	
-	signal main_wea : STD_LOGIC_VECTOR(0 downto 0); 
-	signal main_add_sig : STD_LOGIC_VECTOR(15 downto 0); 
-	signal main_din_sig : STD_LOGIC_VECTOR(7 downto 0); 
-	signal main_dout_sig : STD_LOGIC_VECTOR(7 downto 0); 
+	-- SDRAM CONTROLLER -- 
+	component sdram_controller
+	PORT(
+		clk : IN std_logic;
+		memstrb : IN std_logic;
+		wea : IN std_logic_vector(0 to 0);
+		address : IN std_logic_vector(11 downto 0);
+		d_in : IN std_logic_vector(7 downto 0);          
+		d_out : OUT std_logic_vector(7 downto 0)
+		);
+	end component;
+		
+	-- CACHE CONTROLLER REGISTERS -- 
+	type tag is array(0 to 7) of STD_LOGIC_VECTOR(3 downto 0); 
 	
-	-- CACHE CONTROLLER -- 
-	type tag is array(7 to 0) of STD_LOGIC_VECTOR(7 downto 0); 
-	signal dbit_reg :  STD_LOGIC_VECTOR(7 downto 0) := "00000000"; 
-	signal vbit_reg :  STD_LOGIC_VECTOR(7 downto 0) := "00000000"; 
-	signal tag_reg: tag := ((others => (others => '0'))); 
-	signal counter : integer := 0 ; 
-	signal cache_offset : STD_LOGIC_VECTOR(4 downto 0) := "00000"; 
+	signal tag_reg : tag; 
+	signal vbit : STD_LOGIC_VECTOR(7 downto 0) := "00000000"; 
+	signal dbit : STD_LOGIC_VECTOR(7 downto 0) := "00000000"; 
 	
-	-- STATE SIGNALS -- 
+	
+	-- CACHE CONTROLLER SIGNALS -- 
+	signal clk_counter : STD_LOGIC_VECTOR(7 downto 0); 
 	signal state_sig : STD_LOGIC_VECTOR(2 downto 0) := "000"; 
-	signal hit_sig, dirty_sig, d_in_mux, d_out_mux : STD_LOGIC; 
+	signal next_state : STD_LOGIC_VECTOR(2 downto 0); 
+	signal hit_sig, dirty_sig : STD_LOGIC; 
+	signal cache_to_main, main_to_cache : STD_LOGIC; 
+	signal offset : STD_LOGIC_VECTOR(4 downto 0) := "00000"; 
+	signal counter : integer; 
 	
+	-- CPU SIGNALS -- 
+	signal cpu_address : STD_LOGIC_VECTOR(11 downto 0); 
+	signal cpu_tag : STD_LOGIC_VECTOR(3 downto 0); 
+	signal cpu_index : STD_LOGIC_VECTOR(2 downto 0); 
+	signal index : integer; 
+	signal cpu_dout : STD_LOGIC_VECTOR(7 downto 0); 
+	signal cpu_din : STD_LOGIC_VECTOR(7 downto 0); 
+	signal cpu_rd_wr, cpu_cs, cpu_rdy : STD_LOGIC; 
 	
-
+	-- CACHE MEMORY SIGNALS -- 
+	signal cache_add_sig : STD_LOGIC_VECTOR(7 downto 0); 
+	signal cache_rd_wr : STD_LOGIC_VECTOR(0 downto 0); 
+	signal cache_din_sig, cache_dout_sig : STD_LOGIC_VECTOR(7 downto 0); 
+	
+	-- MAIN MEMORY SIGNALS -- 
+	signal main_add_sig : STD_LOGIC_VECTOR(11 downto 0); 
+	signal main_din_sig : STD_LOGIC_VECTOR(7 downto 0); 
+	signal main_dout_sig : STD_LOGIC_VECTOR(7 downto 0);
+	signal main_rd_wr : STD_LOGIC_VECTOR(0 downto 0); 
+	signal main_memstrb : STD_LOGIC; 
+	
 begin
+	
+	-- PORT MAP -- 
 
-	trig(0) <= '1'; 
+	sys_icon : icon port map(control0, control1); 
+	sys_ila : ila port map(control0, clk, ila_data, trig);
+	sys_vio : vio port map(control1, vio_sig); 
+	sys_cache : cache_mem port map(clk, cache_rd_wr, cache_add_sig, cache_din_sig, cache_dout_sig); 
+	sys_sdram : sdram_controller port map(clk, main_memstrb, main_rd_wr, main_add_sig, main_din_sig, main_dout_sig); 
 	
-	sys_cache : cache port map(clk, cache_wea, cache_add_sig, cache_din_sig, cache_dout_sig);  
-	sys_sdram : sdram_controller port map(clk, main_add_sig, main_wea, main_din_sig, main_dout_sig); 
-	sys_icon : icon port map (control); 
-	sys_ila : ila port map (control, clk, ila_data, trig); 
-	sys_cpu : CPU_gen port map (clk, '0', cpu_rdy, cpu_add, cpu_rd_wr, cpu_cs, cpu_dout_sig); 
+	-- ACTUAL PROCESSES -- 
 	
-	hit_or_miss : process(cpu_add) 
-	variable index_binary : STD_LOGIC_VECTOR(2 downto 0); 
+	-- CHECK HIT OR MISS -- 
+	hit_or_miss : process(cpu_address, tag_reg)
 	begin 
-			cpu_tag <= cpu_add(15 downto 8); 
-			index_binary := cpu_add(7 downto 5);
-			offset <= cpu_add(4 downto 0);
-			
-			if index_binary = "000" then 
-				index <= 1; 
-			elsif index_binary = "001" then 
-				index <= 2; 
-			elsif index_binary = "010" then 
-				index <= 3;
-			elsif index_binary = "011" then 
-				index <= 4;
-			elsif index_binary = "100" then 
-				index <= 5;
-			elsif index_binary = "101" then 
-				index <= 6;
-			elsif index_binary = "110" then 
-				index <= 7;
-			elsif index_binary = "111" then 
-				index <= 8;
-			end if; 
-			
-			if (tag_reg(index) = cpu_tag) then 
-				hit_sig <= '1'; 
-			else
-				hit_sig <= '0'; 
-				
-				if (dbit_reg(index) = '1') then 
-					dirty_sig <= '1'; 
+		if(tag_reg(index) = cpu_tag and vbit(index) = '1') then 
+			hit_sig <= '1'; 
+		else 
+			hit_sig <= '0'; 
+		end if; 
+		
+	end process; 
+	
+	-- UPDATE STATE -- 
+	update_state : process(clk, state_sig, next_state) 
+	begin 
+		if (clk'event and clk='1') then 
+			state_sig <= next_state; 
+		end if; 
+	end process; 
+	
+	-- GENERATE THE NEXT STATE -- 
+	fsm : process(clk, cpu_cs, state_sig, cache_to_main, main_to_cache) 
+	begin 
+		if (clk'event and clk='1') then 
+			if (state_sig = "000") then 
+			-- IDLE STATE -- 
+			-- LET CPU KNOW THAT IT IS READY FOR TRANSACTION -- 
+				if (cpu_cs = '1') then 
+			-- IF THE CPU TURNS ON CS THEN CHECK READ WRITE -- 
+					next_state <= "001"; 
+				end if; 
+			elsif (state_sig = "001") then 
+				-- GO TO: 
+				-- 	STATE 2 : READ 
+				-- 	STATE 3 : WRITE 
+				-- 	STATE 4 : WRITE CACHE TO MAIN 
+				-- 	STATE 5 : WRITE MAIN TO CACHE 
+				if (hit_sig = '1') then 
+					if (cpu_rd_wr = '0') then 
+					-- READ -- 
+						next_state <= "010"; 
+					else 
+					-- WRITE -- 
+						next_state <= "011"; 
+					end if; 
 				else 
-					dirty_sig <= '0'; 
-				end if;
+					if (dbit(index) = '0') then 
+					-- CACHE TO MAIN -- 
+						next_state <= "100"; 
+					else 
+					-- MAIN TO CACHE -- 
+						next_state <= "101"; 
+					end if; 
+				end if; 
+			elsif (state_sig = "010") then 
+			-- IN READ STATE -- 
+				next_state <= "000"; 
+			elsif (state_sig = "011") then 
+			-- IN WRITE STATE -- 
+				next_state <= "000"; 
+			elsif (state_sig = "100") then 
+			-- IN MAIN TO CACHE STATE -- 
+				if (main_to_cache = '1') then 
+					next_state <= "001"; 
+				end if; 
+			elsif (state_sig = "101") then 
+			-- IN CACHE TO MAIN STATE -- 
+				if (cache_to_main = '1') then 
+					next_state <= "100"; 
+				end if; 
+			end if; 
 		end if; 
 	end process; 
-			
 	
-	state_transition: process(clk, cpu_cs) 
-	begin
-			if (clk'event and clk='1') then  
-				case state_sig is 
-					when "000" => 
-						cpu_rdy <= '1';
-						if (cpu_cs = '1') then 
-							state_sig <= "001"; 
-						end if; 
+	
+	-- GENERATE OUTPUT SIGNALS OF STATES -- 
+	gen_output : process(clk, state_sig)
+	begin 
+		if (clk'event and clk='1') then 
+			if (state_sig = "000") then 
+			-- IDLE STATE -- 
+				cpu_rdy <= '1'; 
+			elsif (state_sig = "001") then 
+			-- TRANSITION STATE -- 
+				offset <= "00000"; 
+				cache_to_main <= '0'; 
+				main_to_cache <= '0'; 
+				cpu_rdy <= '0'; 
+				counter <= 0; 
+			elsif (state_sig = "010") then 
+			-- READ STATE -- 
+				cache_rd_wr(0) <= '0'; 
+				cache_add_sig <= cpu_address(7 downto 0); 
+				cpu_din <= cache_dout_sig; 
+			elsif (state_sig = "011") then 
+			-- WRITE STATE -- 
+				cache_rd_wr(0) <= '1'; 
+				cache_add_sig <= cpu_address(7 downto 0); 
+				cache_din_sig <= cpu_dout; 
+				dbit(index) <= '1'; 
+			elsif (state_sig = "100") then 
+			-- MAIN TO CACHE -- 
+				if (counter = 64) then 
+					counter <= 0; 
+					offset <= "00000"; 
+					tag_reg(index) <= cpu_tag; 
+					vbit(index) <= '1'; 
+					dbit(index) <= '0'; 
+					main_to_cache <= '1'; 
+				else 
+					
+					if (counter mod 2 = 1) then 
+						main_memstrb <= '0'; 
+					else 
+						-- MAIN SIGNALS -- 
+						main_memstrb <= '1'; 
+						main_rd_wr(0) <= '0';
+						--main_memstrb <= '1'; 
+						main_add_sig(11 downto 8) <= cpu_tag; 
+						main_add_sig(7 downto 5) <= cpu_index; 
+						main_add_sig(4 downto 0) <= offset; 
 						
-					-- CHECK HIT OR MISS -- 
-					when "001" => 
-						if (hit_sig = '1') then 
-							if (cpu_rd_wr = '0') then 
-								state_sig <= "010"; 
-							else 
-								state_sig <= "011"; 
-							end if;
-							-- SET THE ADDRESS TO READ/WRITE FROM -- 
-							cache_add_sig <= cpu_add(7 downto 0); 
-						else 
-							state_sig <= "100"; 
-						end if; 
-					-- READ STATE -- 
-					when "010" => 
-						cache_wea <= "0"; 
-						d_out_mux <= '1'; 
-						state_sig <= "000"; 
-					when "011" => 
-						cache_wea <= "1"; 
-						d_in_mux <= '0'; 
-						dbit_reg(index) <= '1'; 
-						state_sig <= "000"; 
-					when "100" => 
-						if (dirty_sig = '0') then 
-						-- LOAD FROM MAIN MEMORY -- 
-							state_sig <= "101"; 
-						else 
-						-- LOAD TO MAIN MEMORY -- 
-							state_sig <= "110"; 
-						end if; 
-					when "101" => 
-					-- LOAD FROM MAIN MEMORY -- 
-						if (counter = 32) then 
-							counter <= 0; 
-							dbit_reg(index) <= '0'; 
-							vbit_reg(index) <= '1';  
-							tag_reg(index) <= cpu_tag; 
-							cache_offset <= "00000";
-							state_sig <= "001"; 
-						else 
-							-- WRITE MAIN TO CACHE -- 
-							cache_add_sig(7 downto 5) <= STD_LOGIC_VECTOR(to_unsigned(index, cache_add_sig'length)); 
-							cache_add_sig(4 downto 0) <= cache_offset; 
-							cache_wea <= "1"; 
-							
-							-- READ FROM MAIN -- 
-							main_add_sig(15 downto 5) <= cpu_add(15 downto 5); 
-							main_add_sig(4 downto 0) <= cache_offset; 
-							main_wea <= "0"; 
-							
-							d_in_mux <= '1'; 
-							
-							cache_offset <= STD_LOGIC_VECTOR(unsigned(cache_offset) + 1); 
-							counter <= counter + 1; 
-						end if; 
-					when "110" =>
-					-- WRITE CACHE TO MAIN -- 
-						if (counter = 32) then 
-							counter <= 0; 
-							vbit_reg(index) <= '0';
-							cache_offset <= "00000";
-							state_sig <= "101"; 
-						else 
-							-- READ FROM CACHE -- 
-							cache_add_sig(7 downto 5) <= STD_LOGIC_VECTOR(to_unsigned(index, cache_add_sig'length)); 
-							cache_add_sig(4 downto 0) <= cache_offset; 
-							cache_wea <= "0"; 
-							
-							-- WRITE TO MAIN -- 
-							main_add_sig(15 downto 8) <= tag_reg(index); 
-							main_add_sig(7 downto 5) <= STD_LOGIC_VECTOR(to_unsigned(index, cache_add_sig'length)); 
-							main_add_sig(4 downto 0) <= cache_offset; 
-							main_wea <= "1"; 
-							
-							d_out_mux <= '0'; 
-							
-							cache_offset <= STD_LOGIC_VECTOR(unsigned(cache_offset) + 1); 
-							counter <= counter + 1; 
-							
-						end if; 
-					when others => 
-						state_sig <= "000"; 
-			end case; 
+						
+						-- CACHE SIGNALS -- 
+						cache_rd_wr(0) <= '1'; 
+						cache_add_sig(7 downto 5) <= cpu_address(7 downto 5);
+					   cache_add_sig(4 downto 0) <= offset; 
+
+						-- WRITE MAIN DOUT INTO CACHE DIN -- 
+						cache_din_sig <= main_dout_sig; 
+						
+						-- INCREMENT THE OFFSET -- 
+						offset <= std_logic_vector(unsigned(offset) + 1); 
+					
+					end if;
+					
+					counter <= counter + 1;
+				end if; 
+					
+			elsif (state_sig = "101") then 
+				vbit(index) <= '0'; 
+			-- CACHE TO MAIN -- 
+				if (counter = 64) then 
+					counter <= 0; 
+					offset <= "00000"; 
+					cache_to_main <= '1'; 
+				else 
+					-- OSCILLATE THE MAIN_MEMSTRB SIGNAL TO ENSURE THAT THE DATA IS STABLE -- 
+					if (counter mod 2 = 1) then 
+						main_memstrb <= '0'; 
+					else 
+						-- MAIN SIGNALS -- 
+						-- 	WRITE TO MAIN -- 
+						main_memstrb <= '1'; 
+						main_rd_wr(0) <= '1';
+						--main_memstrb <= '1'; 
+						main_add_sig(11 downto 8) <= tag_reg(index); 
+						main_add_sig(7 downto 5) <= cpu_index; 
+						main_add_sig(4 downto 0) <= offset; 
+						
+						-- CACHE SIGNALS -- 
+						cache_rd_wr(0) <= '0'; 
+						cache_add_sig(7 downto 5) <= cpu_index;
+						cache_add_sig(4 downto 0) <= offset; 
+						
+						-- WRITE CACHE DOUT TO MAIN DIN -- 
+						main_din_sig <= cache_dout_sig; 
+						
+						-- INCREMENT THE OFFSET -- 
+						offset <= std_logic_vector(unsigned(offset) + 1); 
+						
+					end if; 
+					counter <= counter + 1; 
+				end if; 
+			end if; 
 		end if; 
 	end process; 
 	
-	d_out : process(d_out_mux)
-	begin 
-		if (d_out_mux = '0') then 
-			main_din_sig <= cache_dout_sig; 
-		else 
-			cpu_din <= cache_dout_sig; 
-		end if; 
-	end process; 
 	
-	d_in : process(d_in_mux) 
-	begin 
-		if (d_in_mux = '0') then 
-			cache_din_sig <= cpu_dout_sig; 
-		else 
-			cache_din_sig <= main_dout_sig; 
-		end if; 
-	end process; 
 	
-	address_in <= cpu_add; 
-	state <= state_sig; 
-	cs <= cpu_cs; 
-	hit <= hit_sig; 
+	-- WIRES --
+	cpu_tag <= cpu_address(11 downto 8); 
+	cpu_index <= cpu_address(7 downto 5); 
+	index <= to_integer(unsigned(cpu_index)); 
 	
-	cache_add <= cache_add_sig; 
-	cache_din <= cache_din_sig;
-	cache_dout <= cache_dout_sig; 
-	c_wea <= cache_wea; 
+	-- VIO -- 
+	cpu_address <= vio_sig(11 downto 0); 
+	cpu_dout <= vio_sig(19 downto 12); 
+	cpu_cs <= vio_sig(20); 
+	cpu_rd_wr <= vio_sig(21); 
 	
-	m_wea <= main_wea; 
-	main_add <= main_add_sig; 
-	main_din <= main_din_sig; 
-	main_dout <= main_dout_sig; 
+	-- ILA -- 
+	trig(0) <= cpu_cs; 
+	
+	-- CPU DATA
+	ila_data(0) <= cpu_rdy; 
+	ila_data(1) <= cpu_cs; 
+	ila_data(2) <= cpu_rd_wr; 
+	ila_data(14 downto 3) <= cpu_address; 
+	ila_data(22 downto 15) <= cpu_din; 
+	ila_data(31 downto 24) <= cpu_dout; 
+	
+	-- CACHE CONTROLLER DATA -- 
+	ila_data(32) <= hit_sig; 
+	ila_data(33) <= vbit(index); 
+	ila_data(34) <= dbit(index); 
+	ila_data(37 downto 35) <= state_sig; 
+	
+	-- CACHE MEMORY DATA -- 
+	ila_data(38) <= cache_rd_wr(0); 
+	ila_data(46 downto 39) <= cache_add_sig; 
+	ila_data(54 downto 47) <= cache_din_sig; 
+	ila_data(62 downto 55) <= cache_dout_sig; 
+	
+	-- MAIN MEMORY DATA -- 
+	ila_data(63) <= main_rd_wr(0); 
+	ila_data(64) <= main_memstrb; 
+	ila_data(76 downto 65) <= main_add_sig; 
+	ila_data(84 downto 77) <= main_din_sig; 
+	ila_data(92 downto 85) <= main_dout_sig; 
+	
 
 end Behavioral;
+
