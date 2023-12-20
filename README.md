@@ -107,13 +107,13 @@ Some key things to not before I start explaining the code, VHDL is a language th
 Semester around midterms was getting kind of tough so I got lazy and wrote 300+ LOC in one file so modularization would be the first thing I would do. 
 
 1) FSM
-       - The FSM would be its own module, where the processes related to the FSM: fsm, update_state, gen_outputs would be inside that module
-       - It would take the CPU signals and clock as inputs and output the addresses, data in/out, read/write signals
+   - The FSM would be its own module, where the processes related to the FSM: fsm, update_state, gen_outputs would be inside that module
+   - It would take the CPU signals and clock as inputs and output the addresses, data in/out, read/write signals
 3) Hit or miss
-       - Hit or miss function could be its own block
-       - This would keep track of the tags, valid, dirty bits as well
+   - Hit or miss function could be its own block
+   - This would keep track of the tags, valid, dirty bits as well
 4) Top level entity
-       - In this entity you would have the FSM, Hit or miss, ILA, ICON, VIO, cache memory and main memory modules
+   - In this entity you would have the FSM, Hit or miss, ILA, ICON, VIO, cache memory and main memory modules
 
 That's how I would refactor the code. 
 
