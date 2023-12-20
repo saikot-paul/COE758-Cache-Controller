@@ -9,7 +9,7 @@ If you are reading this, you are either a recruiter (please hire me) or a studen
 ### States 
 
 1) State 0 - IDLE 
-  ** This is the idle state, you are just waiting for the CPU to assert chip select to 1
+  **This is the idle state, you are just waiting for the CPU to assert chip select to 1
   ** Once it receives chip signal assertion then it moves to the dispatcher state 
 2) State 1 - Dispatcher
   ** Depending on what the CPU wants to do you go to the corresponding state, which are the following states below
