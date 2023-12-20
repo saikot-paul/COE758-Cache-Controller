@@ -9,15 +9,15 @@ If you are reading this, you are either a recruiter (please hire me) or a studen
 ### States 
 
 1) State 0 - IDLE 
-  - This is the idle state, you are just waiting for the CPU to assert chip select to 1
-  - Once it receives chip signal assertion then it moves to the dispatcher state 
+  ** This is the idle state, you are just waiting for the CPU to assert chip select to 1
+  ** Once it receives chip signal assertion then it moves to the dispatcher state 
 2) State 1 - Dispatcher
-  - Depending on what the CPU wants to do you go to the corresponding state, which are the following states below
-    - Read hit
-    - Write hit
-    - Miss d-bit = 0
-    - Miss d-bit = 1
-  - You may be wondering why there's not read miss, or write miss that's because you have to do block replacement when its a miss for either then perform the action required by the CPU
+  ** Depending on what the CPU wants to do you go to the corresponding state, which are the following states below
+    *** Read hit
+    *** Write hit
+    *** Miss d-bit = 0
+    *** Miss d-bit = 1
+  **You may be wondering why there's not read miss, or write miss that's because you have to do block replacement when its a miss for either then perform the action required by the CPU
   - So again depending some conditions you go into that state
 3) State 2 - Read Hit
   - If you get to this state, that means that the data requested to read is in the cache, so you just retrieve whatever was in the cache (BRAM) and then send it out onto the appropriate signal
