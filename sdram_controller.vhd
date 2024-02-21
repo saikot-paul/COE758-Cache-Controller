@@ -33,51 +33,59 @@ use IEEE.NUMERIC_STD.ALL;
 entity sdram_controller is
 port (
 		clk : in std_logic; 
-		address : in std_logic_vector(15 downto 0); 
+		memstrb : in std_logic; 
 		wea : in std_logic_vector(0 downto 0); 
-		data_in :  in std_logic_vector(7 downto 0); 
-		data_out : out std_logic_vector(7 downto 0)
+		address : in std_logic_vector(11 downto 0); 
+		d_in :  in std_logic_vector(7 downto 0); 
+		d_out : out std_logic_vector(7 downto 0)
 	); 
 end sdram_controller;
 
 architecture Behavioral of sdram_controller is
 
-	signal empty : std_logic := '0'; 
+	signal sdram_rd_wr : STD_LOGIC_VECTOR(0 downto 0);  
+	signal sdram_add_sig : STD_LOGIC_VECTOR(11 downto 0);  
+	signal sdram_din_sig :  in std_logic_vector(7 downto 0); 
+	signal sdram_dout_sig : out std_logic_vector(7 downto 0); 
+
+	signal empty : STD_LOGIC := '0'; 
+	signal counter : STD_LOGIC_VECTOR(11 downto 0) := "000000000000";
 	
-	type twod_arr is array (7 downto 0, 31 downto 0) of std_logic_vector(7 downto 0); 
-	signal x : integer; 
-	signal y : integer; 
-	signal mem_arr : twod_arr; 
+	component sdram 
+	PORT ( 
+		clka : IN STD_LOGIC; 
+		wea : IN STD_LOGIC_VECTOR(0 downto 0); 
+		addra : in std_logic_vector(11 downto 0); 
+		dina :  in std_logic_vector(7 downto 0); 
+		douta : out std_logic_vector(7 downto 0)
+	); 
+	END component; 
 
 begin
 	
-		process(clk)
-		begin 
-			
-			if (clk'event and clk='1') then 
-			
-				x <= to_integer(unsigned(address(15 downto 8))); 
-				y <= to_integer(unsigned(address(7 downto 0))); 
-				
-				if (empty = '0') then 
-					for i in 0 to 7 loop 
-						for j in 0 to 31 loop 
-							mem_arr(i, j) <= "11111111"; 
-							data_out <= mem_arr(i, j);
-						end loop; 
-					end loop; 
-					empty <= '1'; 
-				end if;
-				
-				if (wea = "0") then 
-					data_out <= mem_arr(x, y); 
+
+	sys_sdram : sdram port map (clk, sdram_rd_wr, sdram_add_sig, sdram_din_sig, sdram_dout_sig); 
+
+	main_process : process(clk)
+	begin 
+		if (clk'event and clk='1') then 
+			sdram_add_sig <= address; 
+		
+			if (memstrb = '1') then 
+	
+				if (wea(0) = '0') then 
+					sdram_rd_wr(0) <= '0'; 
+					d_out <= sdram_dout_sig; 
 				else 
-					mem_arr(x,y) <= data_in; 
+					sdram_rd_wr(0) <= '1'; 
+					sdram_din_sig <= d_in; 
 				end if; 
-				
 			end if; 
+		
+		end if;
+	end process; 
 				
-		end process; 
+
 
 
 end Behavioral;
