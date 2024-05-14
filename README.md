@@ -5,7 +5,6 @@ If you are reading this, you are either a recruiter (please hire me) or a studen
 ## State Diagram 
 
 <img width="361" alt="image" src="https://github.com/saikot-paul/coe758/assets/79386282/aa0dea9f-1bd4-4b0c-94d8-8723748b4272">
-## Block Diagram 
 
 ### States 
 
